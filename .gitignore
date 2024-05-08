@@ -75,3 +75,5 @@ typings/
 dist
 
 .DS_Store
+.env
+.env.local

@@ -1,30 +1,23 @@
-import express from 'express';
-import morgan from 'morgan';
-import helmet from 'helmet';
-import cors from 'cors';
-
-import * as middlewares from './middlewares';
-import api from './api';
-import MessageResponse from './interfaces/MessageResponse';
-
-require('dotenv').config();
+import cors from "cors";
+import express from "express";
+import helmet from "helmet";
+import morgan from "morgan";
+import { emailTransport } from "./configs/emailConfig";
+import cookieParser from "cookie-parser";
 
 const app = express();
 
-app.use(morgan('dev'));
+app.use(morgan("dev"));
 app.use(helmet());
-app.use(cors());
-app.use(express.json());
+app.use(
+    cors({
+        credentials: true,
+        origin: process.env.FRONTEND_URL,
+    })
+);
+app.use(express.json({ limit: "10mb" }));
+app.use(express.urlencoded({ extended: true, limit: "10mb" }));
+app.use(cookieParser());
 
-app.get<{}, MessageResponse>('/', (req, res) => {
-  res.json({
-    message: '🦄🌈✨👋🌎🌍🌏✨🌈🦄',
-  });
-});
-
-app.use('/api/v1', api);
-
-app.use(middlewares.notFound);
-app.use(middlewares.errorHandler);
 
 export default app;
