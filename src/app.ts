@@ -2,8 +2,8 @@ import cors from "cors";
 import express from "express";
 import helmet from "helmet";
 import morgan from "morgan";
-import { emailTransport } from "./configs/emailConfig";
 import cookieParser from "cookie-parser";
+import { authRouter } from "./controllers/authController";
 
 const app = express();
 
@@ -19,5 +19,7 @@ app.use(express.json({ limit: "10mb" }));
 app.use(express.urlencoded({ extended: true, limit: "10mb" }));
 app.use(cookieParser());
 
+
+app.use("/auth", authRouter);
 
 export default app;

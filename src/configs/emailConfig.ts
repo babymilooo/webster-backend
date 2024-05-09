@@ -12,3 +12,26 @@ export const emailTransport = createTransport({
         pass: GMAIL_APP_PASSWORD,
     },
 });
+
+export function verificationEmail(backendRoute: string): string {
+    return `
+  Thank you for choosing Webster! 
+  <br/>
+  To complete your registration you have to click on the following link:
+  <br/>
+  <a href="${BACKEND_URL + backendRoute}">${BACKEND_URL + backendRoute}</a>
+  <br/>
+      `;
+}
+
+export function passwordChangeEmail(frontendRoute: string): string {
+    return `
+  To restore access to your account click on the following link:
+  <br/>
+  <a href="${FRONTEND_URL + frontendRoute}">${FRONTEND_URL + frontendRoute}</a>
+  <br/>
+  This link is only usable for one hour.
+  <br/>
+  If you did not try to change your password - contact our support at support@webster.com immediately!
+      `;
+}
