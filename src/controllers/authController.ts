@@ -20,7 +20,7 @@ authRouter.post("/register", registerController);
 authRouter.post("/logout", authGuard, logoutController);
 authRouter.post("/refreshToken", refreshAccessTokenController);
 authRouter.get("/check-auth", checkAccessTokenController);
-authRouter.post("/verify-email/:token", verificateEmail);
+authRouter.get("/verify-email/:token", verificateEmail);
 authRouter.post("/verify-email/send-email", sendVerificationEmailController);
 authRouter.post("/password-reset/send-email", sendPasswordResetEmailController);
 authRouter.post("/password-reset/:token", resetPasswordController);
