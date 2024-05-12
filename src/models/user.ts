@@ -8,6 +8,7 @@ export interface ISchemaUser {
     passwordHash?: string;
     role: "user" | "admin";
     profilePicture?: string;
+    isRegisteredViaGoogle?: boolean;
 }
 
 const userSchema = new Schema<ISchemaUser>({
@@ -46,6 +47,11 @@ const userSchema = new Schema<ISchemaUser>({
         required: false,
         trim: true,
     },
+    isRegisteredViaGoogle: {
+        type: Boolean,
+        required: false,
+        default: false, 
+    }
 });
 
 export const User = model<ISchemaUser>("User", userSchema);

@@ -10,6 +10,7 @@ import { authGuard } from "../helpers/authGuard";
 import { EmailService } from "../services/emailService";
 import { JwtPayload } from "jsonwebtoken";
 import { FRONTEND_URL } from "../configs/emailConfig";
+import { getGoogleAuthURL, getTokens, getUserInfo } from "../configs/googleConfig";
 
 //previously router files
 
@@ -17,6 +18,8 @@ const authRouter = Router();
 
 authRouter.post("/login", loginController);
 authRouter.post("/register", registerController);
+authRouter.get("/google", signInViaGoogle);
+authRouter.get("/google/callback", googleCallback);
 authRouter.post("/logout", authGuard, logoutController);
 authRouter.post("/refreshToken", refreshAccessTokenController);
 authRouter.get("/check-auth", checkAccessTokenController);
@@ -75,6 +78,28 @@ async function registerController(req: Request, res: Response) {
             .status(409)
             .json(msgObj("User with this email already exists"));
     }
+}
+
+async function signInViaGoogle(req: Request, res: Response) {
+    res.send(getGoogleAuthURL());
+}
+
+async function googleCallback(req: Request, res: Response) {
+    const { code } = req.query;
+    if (code) {
+        try {
+            const tokens = await getTokens(code as string);
+            const userInfo = await getUserInfo(tokens);
+            const user = await UserService.findOrCreateUser(userInfo);
+            return res
+                .status(200)
+                .json(await UserService.removeSensitiveData(user));
+        } catch (error) {
+            console.error(error);
+            res.status(500).send("Authorization failed");
+        }
+    } else
+        res.status(400).send("The required code was not found");
 }
 
 async function logoutController(req: Request, res: Response) {

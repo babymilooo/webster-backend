@@ -1,4 +1,4 @@
-import { hashSync } from "bcrypt";
+import { hashSync, compareSync } from "bcrypt";
 import { IUserDto, IUserUpdateDto } from "../types/user";
 import { emailRegex } from "../helpers/emailRegex";
 import axios from "axios";
@@ -55,6 +55,37 @@ export class UserService {
             console.error(error);
             throw new Error("User already exists");
         }
+    }
+
+    static async findOrCreateUser(userInfo: any) {
+        let user = await this.findUserByEmail(userInfo.email);
+        if (!user) 
+            user = await this.createGoogleUser(userInfo);
+        else if(user && user.isRegisteredViaGoogle &&
+            user.passwordHash &&
+            compareSync(userInfo.id, user.passwordHash)
+        ) {
+            const updateData: IUserUpdateDto = {
+                userName: userInfo.name, 
+                email: userInfo.email,
+                profilePicture: userInfo.picture || user.profilePicture
+            };
+            user = await this.updateUser(user.id, updateData);
+        }
+        else 
+            throw new Error("Either such a user does not exist or you have already registered");
+        return user;
+    }
+
+    static async createGoogleUser(userInfo: any) {
+        const profilePictureUrl = userInfo.picture || "";
+        return await this.createUser({
+            userName: userInfo.name, 
+            email: userInfo.email, 
+            password: userInfo.id,
+            isRegisteredViaGoogle: true,
+            profilePicture: profilePictureUrl
+        });
     }
 
     static async generateAvatarPath(avatarFileName: string) {

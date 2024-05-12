@@ -5,6 +5,7 @@ export interface IUserDto {
     emailVerified?: boolean;
     role?: string;
     profilePicture?: string;
+    isRegisteredViaGoogle?: boolean;
 }
 
 export interface IUserUpdateDto {
@@ -12,4 +13,5 @@ export interface IUserUpdateDto {
     email?: string;
     role?: string;
     emailVerified?: boolean;
+    profilePicture?: string;
 }
