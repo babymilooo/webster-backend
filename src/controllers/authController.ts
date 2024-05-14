@@ -94,6 +94,7 @@ async function googleCallback(req: Request, res: Response) {
             const tokens = await getTokens(code as string);
             const userInfo = await getUserInfo(tokens);
             const user = await UserService.findOrCreateUser(userInfo);
+            await TokenService.setAuthTokens(res, user);
             return res
                 .status(200)
                 .json(await UserService.removeSensitiveData(user));
