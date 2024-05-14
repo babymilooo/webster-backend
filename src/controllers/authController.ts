@@ -81,11 +81,14 @@ async function registerController(req: Request, res: Response) {
 }
 
 async function signInViaGoogle(req: Request, res: Response) {
-    res.send(getGoogleAuthURL());
+    const url = getGoogleAuthURL();
+    console.log(url);
+    return res.status(200).json(url);
 }
 
 async function googleCallback(req: Request, res: Response) {
     const { code } = req.query;
+    console.log(code);
     if (code) {
         try {
             const tokens = await getTokens(code as string);
@@ -96,10 +99,10 @@ async function googleCallback(req: Request, res: Response) {
                 .json(await UserService.removeSensitiveData(user));
         } catch (error) {
             console.error(error);
-            res.status(500).send("Authorization failed");
+            return res.status(500).send("Authorization failed");
         }
     } else
-        res.status(400).send("The required code was not found");
+        return res.status(400).send("The required code was not found");
 }
 
 async function logoutController(req: Request, res: Response) {

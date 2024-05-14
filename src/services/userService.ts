@@ -61,10 +61,7 @@ export class UserService {
         let user = await this.findUserByEmail(userInfo.email);
         if (!user) 
             user = await this.createGoogleUser(userInfo);
-        else if(user && user.isRegisteredViaGoogle &&
-            user.passwordHash &&
-            compareSync(userInfo.id, user.passwordHash)
-        ) {
+        else if(user && user.isRegisteredViaGoogle) {
             const updateData: IUserUpdateDto = {
                 userName: userInfo.name, 
                 email: userInfo.email,
@@ -83,6 +80,7 @@ export class UserService {
             userName: userInfo.name, 
             email: userInfo.email, 
             password: userInfo.id,
+            emailVerified: true,
             isRegisteredViaGoogle: true,
             profilePicture: profilePictureUrl
         });
