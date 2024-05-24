@@ -26,5 +26,6 @@ function createMulterConfig(dirName: string) {
 
 const uploadAvatars = createMulterConfig("avatars");
 const uploadProject= createMulterConfig("projects");
+const upload = createMulterConfig("tempUpload");
 
-export { uploadAvatars, uploadProject };
+export { uploadAvatars, uploadProject, upload };

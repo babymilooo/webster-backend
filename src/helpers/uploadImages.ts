@@ -16,8 +16,7 @@ export async function updateFile(
         let basePath;
         if (entityType === "profile")
             basePath = path.posix.join(nameFolderStatic, "avatars");
-        else 
-            basePath = path.posix.join(nameFolderStatic, "projects");
+        else basePath = path.posix.join(nameFolderStatic, "projects");
 
         const currentFilename = updateData[fieldname];
         if (currentFilename) {
@@ -38,7 +37,20 @@ export async function removeSingleFile(file: Express.Multer.File | string) {
     }
 }
 
-export function generateFileUrl(filename: string, fileNameFolder: string): string {
+export function generateFileUrl(
+    filename: string,
+    fileNameFolder: string
+): string {
     const basePath = process.env.BACKEND_URL;
     return `${basePath}/${nameFolderStatic}/${fileNameFolder}/${filename}`;
+}
+
+export function getMimeType(format: string) {
+    const formats: { [key: string]: string } = {
+        png: "image/png",
+        jpeg: "image/jpeg",
+        jpg: "image/jpeg"
+    };
+
+    return formats[format.toLowerCase()] || "image/png";
 }
