@@ -23,9 +23,9 @@ projectRouter.post(
     upload.single("image"),
     removeBackground
 );
-projectRouter.get("/:id", authGuard,  getProjectByIdController);
 projectRouter.get("/myProjects", authGuard, getProjectOfUserController);
 projectRouter.post("/create", authGuard, createProjectController);
+projectRouter.get("/:id", authGuard,  getProjectByIdController);
 projectRouter.patch("/:id", authGuard, updateProjectController);
 projectRouter.delete("/:id", authGuard, deleteProjectController);
 
