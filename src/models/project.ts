@@ -1,8 +1,10 @@
-import { HydratedDocument, Schema, model } from "mongoose";
+import { HydratedDocument, Schema, Types, model } from "mongoose";
 
 export interface ISchemaProject {
   title?: string;
-  picture?: string;
+  pictures: string[];
+  owner: Types.ObjectId;
+  projectJSON?: string;
 }
 
 const projectSchema = new Schema<ISchemaProject>({
@@ -11,9 +13,17 @@ const projectSchema = new Schema<ISchemaProject>({
     default: "",
     trim: true,
   },
-  picture: {
-    type: String,
-    default: ""
+  pictures: {
+    type: [String],
+    default: []
+  },
+  owner: {
+    type: Schema.Types.ObjectId,
+    required: true,
+    ref: "User",
+  },
+  projectJSON: {
+    type: String
   }
 }, {
   timestamps: true
