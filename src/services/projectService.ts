@@ -10,8 +10,8 @@ export class ProjectService {
     static async getProjectsOfUser(userId: Types.ObjectId | string) {
         return await Project.find({ owner: userId }).exec();
     }
-    static async createNewProject(data: {title: string, userId: Types.ObjectId | string, projectJSON?: string }) {
-        const project = new Project();
+    static async createNewProject(data: {title: string, owner: Types.ObjectId | string, projectJSON?: string }) {
+        const project = new Project(data);
         await project.save();
         return project;
     }
