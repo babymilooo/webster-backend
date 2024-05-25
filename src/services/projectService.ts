@@ -11,7 +11,7 @@ export class ProjectService {
         return await Project.find({ owner: userId }).exec();
     }
     static async createNewProject(data: {title: string, userId: Types.ObjectId | string, projectJSON?: string }) {
-        const project = new Project(data);
+        const project = new Project();
         await project.save();
         return project;
     }

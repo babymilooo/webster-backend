@@ -72,7 +72,7 @@ async function createProjectController(req: Request, res: Response) {
         const data = req.body;
         const userId = (req as any).userId;
 
-        const project = await ProjectService.createNewProject({ ...data, userId });
+        const project = await ProjectService.createNewProject({ ...data, owner: userId });
         return res.json(project);
         
     } catch (error) {
