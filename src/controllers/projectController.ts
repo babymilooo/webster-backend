@@ -54,7 +54,7 @@ async function getProjectByIdController(req: Request, res: Response) {
 async function getProjectOfUserController(req: Request, res: Response) {
     try {
         const id = (req as any).userId;
-        const projects = await ProjectService.getProjectsOfUser(id);
+        const projects = await ProjectService.getProjectsOfUserNoJSON(id);
         if (!projects) return res.status(404).json(msgObj("User not found"));
         const sanitizedProjects = projects.map((p) => {
             const pObj = p.toObject() as any;
