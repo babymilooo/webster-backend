@@ -78,3 +78,6 @@ dist
 .env
 .env.local
 static/projects/*
+static/thumbnails/*
+static/avatars/*
+static/tempUpload/*
