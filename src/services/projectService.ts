@@ -2,6 +2,7 @@ import { Types } from "mongoose";
 import { IProject, Project } from "../models/project";
 import path from "path";
 import { unlink } from "fs/promises";
+import { existsSync } from "fs";
 
 export class ProjectService {
     static async getProjectById(id: Types.ObjectId | string) {
@@ -31,6 +32,7 @@ export class ProjectService {
     }
     static async deleteProject(id: Types.ObjectId | string) {
         const project = await Project.findById(id).exec();
+        if (!project) throw new Error('Project not found');
         const files = project?.pictures;
         if (files) {
             const basePath = path.resolve(path.join(__dirname, '..', '..', 'static', 'projects'));
@@ -39,7 +41,29 @@ export class ProjectService {
                 unlink(filePath);
             }
         }
+        const curThumbnail = project.thumbnail;
+        if (curThumbnail) {
+            const thumbPath = path.resolve(path.join(__dirname, '..', '..', 'static', 'thumbnails', curThumbnail));
+            if (existsSync(thumbPath)) {
+                unlink(thumbPath);
+            }
+        }
         await project?.deleteOne();
         return;
+    }
+
+    static async setThumbnail(id: Types.ObjectId | string, filename: string) {
+        const project = await Project.findById(id).exec();
+        if (!project) throw new Error('Project not found');
+        const curThumbnail = project.thumbnail;
+        if (curThumbnail) {
+            const thumbPath = path.resolve(path.join(__dirname, '..', '..', 'static', 'thumbnails', curThumbnail));
+            if (existsSync(thumbPath)) {
+                unlink(thumbPath);
+            }
+        }
+        project.thumbnail = filename;
+        await project.save();
+        return project;
     }
 }

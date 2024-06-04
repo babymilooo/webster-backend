@@ -1,6 +1,6 @@
 import { Request, Response, Router } from "express";
 import { msgObj } from "../helpers/msgObj";
-import { uploadProject } from "../configs/configMulter";
+import { uploadProject, uploadThumbnail } from "../configs/configMulter";
 import {
     removeSingleFile,
     generateFileUrl,
@@ -31,6 +31,14 @@ projectRouter.post("/create", authGuard, createProjectController);
 projectRouter.get("/:id", authGuard, getProjectByIdController);
 projectRouter.patch("/:id", authGuard, updateProjectController);
 projectRouter.delete("/:id", authGuard, deleteProjectController);
+
+projectRouter.patch(
+    "/:id/thumbnail",
+    authGuard,
+    uploadThumbnail.single("image"),
+    setThumbnailController
+);
+projectRouter.get("/:id/thumbnail", authGuard, getThumbnailController);
 
 export { projectRouter };
 
@@ -193,5 +201,63 @@ async function removeBackground(req: Request, res: Response) {
     } catch (error) {
         if (axios.isAxiosError(error)) handleAxiosError(error, res);
         else handleGeneralError(error, res);
+    }
+}
+
+async function setThumbnailController(req: Request, res: Response) {
+    try {
+        const userId = (req as any).userId;
+        const projId = req.params.id;
+        const file = req.file;
+        if (!file) return res.status(400).json(msgObj("No image uploaded."));
+
+        let project = await ProjectService.getProjectById(projId);
+        if (!project) return res.status(404).json(msgObj("Project not found"));
+        if (project.owner.toString() != userId)
+            return res.status(403).json(msgObj("Project not yours"));
+        project = await ProjectService.setThumbnail(project._id, file.filename);
+        const projObj = project.toObject() as any;
+        delete projObj.projectJSON;
+        delete projObj.pictures;
+        return res.status(201).json(projObj);
+    } catch (error) {
+        if (req.file) await removeSingleFile(req.file);
+        if (error instanceof Error) res.status(500).json(msgObj(error.message));
+        else
+            res.status(500).json(
+                msgObj("An error occurred while updating the thumbnail.")
+            );
+    }
+}
+
+async function getThumbnailController(req: Request, res: Response) {
+    try {
+        const userId = (req as any).userId;
+        const projId = req.params.id;
+
+        const project = await ProjectService.getProjectById(projId);
+        if (!project) return res.status(404).json(msgObj("Project not found"));
+        if (project.owner.toString() != userId)
+            return res.status(403).json(msgObj("Project not yours"));
+
+        if (!project.thumbnail)
+            return res.status(404).json(msgObj("Project has no thumbnail"));
+        const thumbPath = path.resolve(
+            path.join(
+                __dirname,
+                "..",
+                "..",
+                "static",
+                "thumbnails",
+                project.thumbnail
+            )
+        );
+        return res.sendFile(thumbPath);
+    } catch (error) {
+        if (error instanceof Error) res.status(500).json(msgObj(error.message));
+        else
+            res.status(500).json(
+                msgObj("An error occurred while getting the thumbnail.")
+            );
     }
 }

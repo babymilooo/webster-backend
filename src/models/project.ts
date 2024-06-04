@@ -5,6 +5,7 @@ export interface ISchemaProject {
   pictures: string[];
   owner: Types.ObjectId;
   projectJSON?: string;
+  thumbnail?: string;
 }
 
 const projectSchema = new Schema<ISchemaProject>({
@@ -24,6 +25,9 @@ const projectSchema = new Schema<ISchemaProject>({
   },
   projectJSON: {
     type: String
+  },
+  thumbnail: {
+    type: String,
   }
 }, {
   timestamps: true
