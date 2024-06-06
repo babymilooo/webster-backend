@@ -12,7 +12,7 @@ export class ProjectService {
         return await Project.find({ owner: userId }).exec();
     }
     static async getProjectsOfUserNoJSON(userId: Types.ObjectId | string) {
-        return await Project.find({ owner: userId }).sort({ updatedAt: 'desc'}).select('-projectJSON').exec();
+        return await Project.find({ owner: userId }).select('-projectJSON').exec();
     }
     static async createNewProject(data: {title: string, owner: Types.ObjectId | string, projectJSON?: string }) {
         const project = new Project(data);

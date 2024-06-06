@@ -1,9 +1,9 @@
 import fs from "fs";
 import path from "path";
 import axios from "axios";
-import mime from "mime-types";
 import FormData from "form-data";
 import { Response } from "express";
+import sharp from "sharp";
 
 const nameFolderStatic = "static";
 
@@ -30,6 +30,23 @@ export async function updateFile(
         updateData[fieldname] = filenameOnly;
     }
 }
+
+
+export async function convertToPng(inputPath: string, outputPath: string): Promise<string> {
+    try {
+        console.log("Starting conversion to high-quality PNG with sharp.");
+        await sharp(inputPath)
+            .resize({ width: 1000 })
+            .png({ quality: 100 })
+            .toFile(outputPath);
+        console.log("Image written to high-quality PNG successfully with sharp.");
+        return outputPath;
+    } catch (error) {
+        console.error("Error during conversion to high-quality PNG with sharp:", error);
+        throw error;
+    }
+}
+
 
 export async function removeSingleFile(file: Express.Multer.File | string) {
     const filePath = typeof file === "string" ? file : file.path;
@@ -72,35 +89,45 @@ export async function downloadImage(
     });
 }
 
-export function checkMimeType(filePath: string) {
-    const mimeType = mime.lookup(filePath);
-    console.log("MIME type:", mimeType);
-    if (!mimeType || !mimeType.startsWith("image/"))
-        throw new Error("Invalid file type. The file must be an image.");
-}
 
 export async function removeBgFromImage(filePath: string, apiKey: string) {
-    const formData = new FormData();
-    formData.append("size", "auto");
-    formData.append("image_file", fs.createReadStream(filePath));
+    try {
+        const formData = new FormData();
+        formData.append("size", "auto");
+        formData.append("image_file", fs.createReadStream(filePath));
 
-    const response = await axios({
-        method: "post",
-        url: "https://api.remove.bg/v1.0/removebg",
-        data: formData,
-        responseType: "arraybuffer",
-        headers: {
-            ...formData.getHeaders(),
-            "X-Api-Key": apiKey,
-        },
-    });
+        console.log("Starting request to Remove.bg...");
+        const response = await axios({
+            method: "post",
+            url: "https://api.remove.bg/v1.0/removebg",
+            data: formData,
+            responseType: "arraybuffer",
+            headers: {
+                ...formData.getHeaders(),
+                "X-Api-Key": apiKey,
+            },
+        });
 
-    if (response.status !== 200) {
-        console.error("Error:", response.status, response.statusText);
-        throw new Error(`Error: ${response.statusText}`);
+        if (response.status !== 200) {
+            console.error("Error:", response.status, response.statusText);
+            throw new Error(`Error: ${response.statusText}`);
+        }
+
+        console.log("Remove.bg response status:", response.status);
+        console.log("Remove.bg response headers:", response.headers);
+
+        return response.data;
+    } catch (error) {
+        if (axios.isAxiosError(error)) {
+            console.error("Axios error:", error.response?.status, error.response?.statusText);
+            if (error.response?.data) {
+                console.error("Remove.bg response data:", Buffer.from(error.response.data).toString('utf8'));
+            }
+        } else {
+            console.error("Unexpected error:", error);
+        }
+        throw error;
     }
-
-    return response.data;
 }
 
 export async function saveProcessedImage(filePath: string, data: Buffer) {

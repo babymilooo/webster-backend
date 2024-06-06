@@ -5,16 +5,17 @@ import {
     removeSingleFile,
     generateFileUrl,
     downloadImage,
-    checkMimeType,
     removeBgFromImage,
     saveProcessedImage,
     deleteFile,
     renameFile,
     handleAxiosError,
     handleGeneralError,
+    convertToPng
 } from "../helpers/uploadImages";
 import axios from "axios";
 import path from "path";
+
 import { ProjectService } from "../services/projectService";
 import { authGuard } from "../helpers/authGuard";
 const projectRouter = Router();
@@ -172,11 +173,15 @@ async function removeBackground(req: Request, res: Response) {
             "projects",
             inputFilename
         );
-        const newInputFilename = `new-${inputFilename}`;
-        const newInputPath = path.join(
+        const newInputFilename = `new-${path.basename(inputFilename, path.extname(inputFilename))}.png`;
+        let newInputPath = path.join(
             path.dirname(inputPath),
             newInputFilename
         );
+
+        const tempInputFilename = `temp-${path.basename(inputFilename, path.extname(inputFilename))}${path.extname(inputFilename)}`;
+        const tempInputPath = path.join(path.dirname(inputPath), tempInputFilename);
+
         const outputFilename = newInputFilename.replace(
             path.extname(newInputFilename),
             `.${format}`
@@ -185,13 +190,17 @@ async function removeBackground(req: Request, res: Response) {
             path.dirname(newInputPath),
             outputFilename
         );
+        
+        await downloadImage(imageUrl, tempInputPath);
 
-        await downloadImage(imageUrl, newInputPath);
-        checkMimeType(newInputPath);
+        await convertToPng(tempInputPath, newInputPath);
+        await deleteFile(tempInputPath);
+
         const processedImage = await removeBgFromImage(
             newInputPath,
             process.env.REMOVE_BG_API_KEY!
         );
+
         await saveProcessedImage(outputPath, processedImage);
         await deleteFile(inputPath);
         const finalPath = path.join(path.dirname(outputPath), inputFilename);
