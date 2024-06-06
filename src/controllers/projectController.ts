@@ -11,7 +11,7 @@ import {
     renameFile,
     handleAxiosError,
     handleGeneralError,
-    convertToPng
+    convertToPng,
 } from "../helpers/uploadImages";
 import axios from "axios";
 import path from "path";
@@ -158,9 +158,8 @@ async function updateImage(req: Request, res: Response) {
 }
 
 async function removeBackground(req: Request, res: Response) {
-    const format =
-        typeof req.query.format === "string" ? req.query.format : "png";
     const imageUrl = req.body.imageUrl;
+    const id_project = req.body.id;
     if (!imageUrl) return res.status(400).send("No image URL provided");
 
     try {
@@ -173,24 +172,31 @@ async function removeBackground(req: Request, res: Response) {
             "projects",
             inputFilename
         );
-        const newInputFilename = `new-${path.basename(inputFilename, path.extname(inputFilename))}.png`;
-        let newInputPath = path.join(
+
+        const newInputFilename = `new-${path.basename(
+            inputFilename,
+            path.extname(inputFilename)
+        )}.png`;
+        let newInputPath = path.join(path.dirname(inputPath), newInputFilename);
+
+        const tempInputFilename = `temp-${path.basename(
+            inputFilename,
+            path.extname(inputFilename)
+        )}${path.extname(inputFilename)}`;
+        const tempInputPath = path.join(
             path.dirname(inputPath),
-            newInputFilename
+            tempInputFilename
         );
 
-        const tempInputFilename = `temp-${path.basename(inputFilename, path.extname(inputFilename))}${path.extname(inputFilename)}`;
-        const tempInputPath = path.join(path.dirname(inputPath), tempInputFilename);
-
-        const outputFilename = newInputFilename.replace(
-            path.extname(newInputFilename),
-            `.${format}`
-        );
+        const outputFilename = `rmbg-${path.basename(
+            inputFilename,
+            path.extname(inputFilename)
+        )}${path.extname(inputFilename)}`;
         const outputPath = path.join(
             path.dirname(newInputPath),
             outputFilename
         );
-        
+
         await downloadImage(imageUrl, tempInputPath);
 
         await convertToPng(tempInputPath, newInputPath);
@@ -202,10 +208,11 @@ async function removeBackground(req: Request, res: Response) {
         );
 
         await saveProcessedImage(outputPath, processedImage);
-        await deleteFile(inputPath);
-        const finalPath = path.join(path.dirname(outputPath), inputFilename);
-        await renameFile(outputPath, finalPath);
-        const nameImage = generateFileUrl(inputFilename, "projects");
+        await deleteFile(newInputPath);
+        // const finalPath = path.join(path.dirname(outputPath), inputFilename);
+        // await renameFile(outputPath, finalPath);
+        await ProjectService.addImage(id_project, outputFilename);
+        const nameImage = generateFileUrl(outputFilename, "projects");
         return res.status(200).json({ image: nameImage });
     } catch (error) {
         if (axios.isAxiosError(error)) handleAxiosError(error, res);
