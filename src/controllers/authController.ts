@@ -51,6 +51,7 @@ async function loginController(req: Request, res: Response) {
         if (!compareSync(loginInfo.password, user.passwordHash))
             return res.status(403).json(msgObj("Email or password is invalid"));
 
+        console.log(await UserService.removeSensitiveData(user));
         await TokenService.setAuthTokens(res, user);
         return res
             .status(200)
@@ -139,6 +140,7 @@ async function refreshAccessTokenController(req: Request, res: Response) {
         );
         await TokenService.setAuthTokensToCookies(res, tokens);
         // await setAuthTokens(res, user);
+        console.log(await UserService.removeSensitiveData(user));
         return res
             .status(200)
             .json(await UserService.removeSensitiveData(user));

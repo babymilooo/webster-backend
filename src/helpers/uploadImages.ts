@@ -31,22 +31,28 @@ export async function updateFile(
     }
 }
 
-
-export async function convertToPng(inputPath: string, outputPath: string): Promise<string> {
+export async function convertToPng(
+    inputPath: string,
+    outputPath: string
+): Promise<string> {
     try {
         console.log("Starting conversion to high-quality PNG with sharp.");
         await sharp(inputPath)
             .resize({ width: 1000 })
             .png({ quality: 100 })
             .toFile(outputPath);
-        console.log("Image written to high-quality PNG successfully with sharp.");
+        console.log(
+            "Image written to high-quality PNG successfully with sharp."
+        );
         return outputPath;
     } catch (error) {
-        console.error("Error during conversion to high-quality PNG with sharp:", error);
+        console.error(
+            "Error during conversion to high-quality PNG with sharp:",
+            error
+        );
         throw error;
     }
 }
-
 
 export async function removeSingleFile(file: Express.Multer.File | string) {
     const filePath = typeof file === "string" ? file : file.path;
@@ -89,7 +95,6 @@ export async function downloadImage(
     });
 }
 
-
 export async function removeBgFromImage(filePath: string, apiKey: string) {
     try {
         const formData = new FormData();
@@ -119,9 +124,16 @@ export async function removeBgFromImage(filePath: string, apiKey: string) {
         return response.data;
     } catch (error) {
         if (axios.isAxiosError(error)) {
-            console.error("Axios error:", error.response?.status, error.response?.statusText);
+            console.error(
+                "Axios error:",
+                error.response?.status,
+                error.response?.statusText
+            );
             if (error.response?.data) {
-                console.error("Remove.bg response data:", Buffer.from(error.response.data).toString('utf8'));
+                console.error(
+                    "Remove.bg response data:",
+                    Buffer.from(error.response.data).toString("utf8")
+                );
             }
         } else {
             console.error("Unexpected error:", error);

@@ -21,7 +21,12 @@ function createMulterConfig(dirName: string) {
         },
     });
 
-    return multer({ storage: storage });
+    return multer({
+        storage: storage,
+        limits: {
+            fileSize: 5 * 1024 * 1024,
+        },
+    });
 }
 
 const uploadAvatars = createMulterConfig("avatars");

@@ -5,6 +5,9 @@ import axios from "axios";
 import { IUser, User } from "../models/user";
 import { EmailService } from "./emailService";
 import { Types } from "mongoose";
+import { removeSingleFile } from "../helpers/uploadImages";
+import path from "path";
+import fs from "fs";
 
 export class UserService {
     static async createHashPassword(password: string): Promise<string> {
@@ -59,30 +62,30 @@ export class UserService {
 
     static async findOrCreateUser(userInfo: any) {
         let user = await this.findUserByEmail(userInfo.email);
-        if (!user) 
-            user = await this.createGoogleUser(userInfo);
-        else if(user && user.isRegisteredViaGoogle) {
+        if (!user) user = await this.createGoogleUser(userInfo);
+        else if (user && user.isRegisteredViaGoogle) {
             const updateData: IUserUpdateDto = {
-                userName: userInfo.name, 
+                userName: userInfo.name,
                 email: userInfo.email,
-                profilePicture: userInfo.picture || user.profilePicture
+                profilePicture: userInfo.picture || user.profilePicture,
             };
             user = await this.updateUser(user.id, updateData);
-        }
-        else 
-            throw new Error("Either such a user does not exist or you have already registered");
+        } else
+            throw new Error(
+                "Either such a user does not exist or you have already registered"
+            );
         return user;
     }
 
     static async createGoogleUser(userInfo: any) {
         const profilePictureUrl = userInfo.picture || "";
         return await this.createUser({
-            userName: userInfo.name, 
-            email: userInfo.email, 
+            userName: userInfo.name,
+            email: userInfo.email,
             password: userInfo.id,
             emailVerified: true,
             isRegisteredViaGoogle: true,
-            profilePicture: profilePictureUrl
+            profilePicture: profilePictureUrl,
         });
     }
 
@@ -130,23 +133,22 @@ export class UserService {
         return updateUser;
     }
 
-    static async deleteUser(id: string) {
-        return await User.findByIdAndDelete(id).exec();
-    }
-
     static async removeSensitiveData(user: any) {
         const userObject = user.toObject
             ? user.toObject()
             : user._doc
             ? user._doc
             : user;
-        if (userObject.profilePicture) {
+
+        if (!userObject.isRegisteredViaGoogle && userObject.profilePicture) {
             const generatedAvatarPath = await this.generateAvatarPath(
                 userObject.profilePicture
             );
-            if (generatedAvatarPath)
+            if (generatedAvatarPath) {
                 userObject.profilePicture = generatedAvatarPath;
+            }
         }
+
         delete userObject.passwordHash;
         return userObject;
     }
@@ -167,5 +169,15 @@ export class UserService {
         return publicUserInfo;
     }
 
-    
+    static async deleteUser(id: string) {
+        const user = await this.findUserById(id);
+        if (!user) throw new Error("User not found");
+
+        const profilePicture = user.profilePicture;
+        if (profilePicture && (profilePicture.startsWith("avatar"))) {
+            const avatarPath = path.resolve(path.join(__dirname, '..', '..', 'static', 'avatars', profilePicture));
+            await removeSingleFile(avatarPath);
+        }
+        return await User.findByIdAndDelete(id).exec();
+    }
 }

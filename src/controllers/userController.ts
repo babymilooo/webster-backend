@@ -7,9 +7,15 @@ import { EmailService } from "../services/emailService";
 import { passwordRegex } from "../helpers/passwordRegex";
 import { compareSync } from "bcrypt";
 import { TokenService } from "../services/tokenService";
+import { ProjectService } from "../services/projectService";
 import { IAuthTokens } from "../types/token";
 import { IUserUpdateDto } from "../types/user";
-
+import { uploadAvatars } from "../configs/configMulter";
+import {
+    updateFile,
+    removeSingleFile,
+    generateFileUrl,
+} from "../helpers/uploadImages";
 const userRouter = Router();
 
 userRouter.get(
@@ -42,12 +48,23 @@ userRouter.patch(
     updateProfileController
 );
 
+userRouter.delete("/delete-profile", authGuard, deleteAccount);
+
+userRouter.patch(
+    "/edit-profile-avatar",
+    authGuard,
+    refreshTokenMiddleware,
+    uploadAvatars.single("avatar"),
+    updateAvatar
+);
+
 export { userRouter };
 
 async function getUserInfoController(req: Request, res: Response) {
     try {
         const userId = (req as any).userId as string;
         const user = await UserService.findUserById(userId);
+        console.log(await UserService.removeSensitiveData(user));
         res.status(200).json(await UserService.removeSensitiveData(user));
     } catch (error) {
         return res
@@ -153,5 +170,58 @@ async function getUserInfoByIdController(req: Request, res: Response) {
         return res
             .status(500)
             .json(msgObj("An error occurred while fetching user information"));
+    }
+}
+
+export async function updateAvatar(req: Request, res: Response) {
+    try {
+        const userId = (req as any).userId as string;
+        const file: Express.Multer.File = req.file as any;
+
+        if (!file) return res.status(400).json(msgObj("No image uploaded."));
+
+        const currentUser = await UserService.findUserById(userId);
+        if (currentUser && currentUser.isRegisteredViaGoogle)
+            return res
+                .status(403)
+                .json(
+                    msgObj(
+                        "Profile editing is not allowed for users registered via Spotify."
+                    )
+                );
+
+        await updateFile(currentUser, "profile", "profilePicture", file);
+        await currentUser.save();
+
+        const avatarPath = currentUser.profilePicture
+            ? generateFileUrl(file.filename, "avatars")
+            : null;
+        res.status(200).json({ profilePicture: avatarPath });
+    } catch (error: any) {
+        if (req.file) await removeSingleFile(req.file);
+        if (error instanceof Error) res.status(500).json(msgObj(error.message));
+        else
+            res.status(500).json(
+                msgObj("An error occurred while updating the image.")
+            );
+    }
+}
+
+async function deleteAccount(req: Request, res: Response) {
+    try {
+        const userId = (req as any).userId as string;
+        await ProjectService.deleteProjectsByUser(userId);
+        await UserService.deleteUser(userId);
+        await TokenService.deleteAuthTokensFromCookies(res);
+        TokenService.invalidateRefreshToken(
+            (req as Request & { tokens: IAuthTokens }).tokens.refreshToken
+        );
+        res.status(200).json(msgObj("Account successfully deleted"));
+    } catch (error) {
+        if (error instanceof Error) {
+            res.status(500).json(msgObj(error.message));
+        } else {
+            res.status(500).json(msgObj("Failed to delete account"));
+        }
     }
 }
