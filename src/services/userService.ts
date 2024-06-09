@@ -5,6 +5,10 @@ import axios from "axios";
 import { IUser, User } from "../models/user";
 import { EmailService } from "./emailService";
 import { Types } from "mongoose";
+import { ProjectService } from "./projectService";
+import path from "path";
+import { existsSync } from "fs";
+import { unlink } from "fs/promises";
 
 export class UserService {
     static async createHashPassword(password: string): Promise<string> {
@@ -130,7 +134,10 @@ export class UserService {
         return updateUser;
     }
 
-    static async deleteUser(id: string) {
+    static async deleteUser(id: string | Types.ObjectId) {
+        const projects = await ProjectService.getProjectsOfUser(id);
+        const promises = projects.map((p) => ProjectService.deleteProject(p._id));
+        await Promise.all(promises);
         return await User.findByIdAndDelete(id).exec();
     }
 
@@ -167,5 +174,19 @@ export class UserService {
         return publicUserInfo;
     }
 
+    static async setAvatar(id: string | Types.ObjectId, filename: string) {
+        const user = await User.findById(id).exec();
+        if (!user) throw new Error('User not found');
+        const curAvathar = user.profilePicture;
+        if (curAvathar) {
+            const avatharPath = path.resolve(path.join(__dirname, '..', '..', 'static', 'avatars', curAvathar));
+            if (existsSync(avatharPath)) {
+                unlink(avatharPath);
+            }
+        }
+        user.profilePicture = filename;
+        await user.save();
+        return user;
+    }
     
 }

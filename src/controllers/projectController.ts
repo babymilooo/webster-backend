@@ -177,7 +177,7 @@ async function removeBackground(req: Request, res: Response) {
             inputFilename,
             path.extname(inputFilename)
         )}.png`;
-        let newInputPath = path.join(path.dirname(inputPath), newInputFilename);
+        const newInputPath = path.join(path.dirname(inputPath), newInputFilename);
 
         const tempInputFilename = `temp-${path.basename(
             inputFilename,

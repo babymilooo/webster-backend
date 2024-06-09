@@ -9,6 +9,8 @@ import { compareSync } from "bcrypt";
 import { TokenService } from "../services/tokenService";
 import { IAuthTokens } from "../types/token";
 import { IUserUpdateDto } from "../types/user";
+import path from "path";
+import { uploadAvatars } from "../configs/configMulter";
 
 const userRouter = Router();
 
@@ -41,6 +43,11 @@ userRouter.patch(
     refreshTokenMiddleware,
     updateProfileController
 );
+
+userRouter.delete("/delete-profile", authGuard, deleteUserController);
+
+userRouter.patch("/set-avatar", authGuard, refreshTokenMiddleware, uploadAvatars.single('image'), setAvatharController);
+userRouter.get("/my-avatar", authGuard, refreshTokenMiddleware, getAvatharController);
 
 export { userRouter };
 
@@ -150,8 +157,77 @@ async function getUserInfoByIdController(req: Request, res: Response) {
         const user = await UserService.findUserById(userId);
         res.status(200).json(await UserService.getPublicUserInfo(user));
     } catch (error) {
-        return res
-            .status(500)
-            .json(msgObj("An error occurred while fetching user information"));
+        if (error instanceof Error) res.status(500).json(msgObj(error.message));
+        else res.status(500).json(msgObj("Failed to get profile"));
     }
 }
+
+async function deleteUserController(req: Request, res: Response) {
+    try {
+        const userId = (req as any).userId as string;
+        const currentUser = await UserService.findUserById(userId);
+        if (!currentUser) return res
+            .status(404)
+            .json(msgObj("User not found"));
+        await UserService.deleteUser(currentUser._id);
+        await TokenService.deleteAuthTokensFromCookies(res);
+        return res.sendStatus(200);
+
+    } catch (error) {
+        if (error instanceof Error) res.status(500).json(msgObj(error.message));
+        else res.status(500).json(msgObj("Failed to delete profile"));
+    }
+}
+
+async function setAvatharController(req: Request, res: Response) {
+    try {
+        const userId = (req as any).userId as string;
+        const file = req.file;
+        if (!file) return res
+        .status(400)
+        .json(msgObj("Image not sent"));
+        const currentUser = await UserService.findUserById(userId);
+        if (!userId) return res
+            .status(404)
+            .json(msgObj("User not found"));
+        await UserService.setAvatar(currentUser._id, file.filename);
+        return res.sendStatus(200);
+
+    } catch (error) {
+        if (error instanceof Error) res.status(500).json(msgObj(error.message));
+        else res.status(500).json(msgObj("Failed to set profile picture"));
+    }
+}
+
+async function getAvatharController(req: Request, res: Response) {
+    try {
+        const userId = (req as any).userId as string;
+        const currentUser = await UserService.findUserById(userId);
+        if (!currentUser) return res
+            .status(404)
+            .json(msgObj("User not found"));
+        console.log(currentUser);
+        
+        if (!currentUser.profilePicture || currentUser.profilePicture.trim().length === 0) {
+            return res
+            .status(404)
+            .json(msgObj("User has no profile picture"));
+        }
+        const avatharPath = path.resolve(
+            path.join(
+                __dirname,
+                "..",
+                "..",
+                "static",
+                "avatars",
+                currentUser.profilePicture
+            )
+        );
+        return res.sendFile(avatharPath);
+
+    } catch (error) {
+        if (error instanceof Error) res.status(500).json(msgObj(error.message));
+        else res.status(500).json(msgObj("Failed to get profile picture"));
+    }
+}
+
