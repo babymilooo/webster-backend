@@ -102,7 +102,7 @@ async function deleteProjectController(req: Request, res: Response) {
         if (!project) return res.status(404).json(msgObj("Project not found"));
         if (project.owner.toString() != userId)
             return res.status(403).json(msgObj("Project not yours"));
-        await project.deleteOne();
+        await ProjectService.deleteProject(project._id);
         return res.sendStatus(200);
     } catch (error) {
         if (error instanceof Error) res.status(500).json(msgObj(error.message));
