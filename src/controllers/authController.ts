@@ -213,7 +213,7 @@ async function sendPasswordResetEmailController(req: Request, res: Response) {
     try {
         const { email } = req.body;
         if (!email) return res.status(400).json(msgObj("Email is required"));
-        EmailService.sendPasswordResetEmail(email);
+        EmailService.sendPasswordResetEmail(email).catch(console.error);
         return res.sendStatus(200);
     } catch (error) {
         console.error(error);

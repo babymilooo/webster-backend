@@ -86,10 +86,12 @@ export async function downloadImage(
     return new Promise((resolve, reject) => {
         writer.on("finish", () => {
             console.log(`Downloaded ${url} to ${filePath}`);
+            writer.close();
             resolve();
         });
         writer.on("error", (error) => {
             console.error(`Error downloading ${url}`, error);
+            writer.close();
             reject(error);
         });
     });
