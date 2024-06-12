@@ -37,6 +37,7 @@ export async function convertToPng(
 ): Promise<string> {
     try {
         console.log("Starting conversion to high-quality PNG with sharp.");
+        sharp.cache(false);
         await sharp(inputPath)
             .resize({ width: 1000 })
             .png({ quality: 100 })
